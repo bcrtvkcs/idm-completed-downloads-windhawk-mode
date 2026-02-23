@@ -2,7 +2,7 @@
 // @id              idm-completed-downloads-cleaner
 // @name            IDM Completed Downloads Cleaner
 // @description     This mode cleans up as soon as the IDM window appears on the screen.
-// @version         0.5.2
+// @version         0.5.3
 // @author          BCRTVKCS
 // @github          https://github.com/bcrtvkcs
 // @twitter         https://x.com/bcrtvkcs
@@ -19,6 +19,9 @@
 // ---------------------------------------------------------
 #define IDM_CMD_DELETE_COMPLETED 32794
 #define IDYES 6  // Standard Windows IDYES button ID
+
+// Concurrency guard: only one CleanupTask may run at a time
+volatile LONG g_cleanupRunning = 0;
 
 // ---------------------------------------------------------
 // HELPER: Find a dialog owned by a specific window
@@ -49,13 +52,29 @@ BOOL CALLBACK FindOwnedDialog(HWND hWnd, LPARAM lParam) {
 DWORD WINAPI CleanupTask(LPVOID lpParam) {
     HWND hMainWnd = (HWND)lpParam;
 
-    // 1. Short delay to let the window fully render
+    // Concurrency guard: if another CleanupTask is already running, exit
+    if (InterlockedCompareExchange(&g_cleanupRunning, 1, 0) != 0) {
+        Wh_Log(L"CleanupTask already running, skipping.");
+        return 0;
+    }
+
+    // 1. Short delay to let the window state settle
     Sleep(50);
 
-    // 2. Send the cleanup command
+    // 2. Verify the window is truly user-opened (not auto-start background)
+    //    During auto-start, IDM briefly shows the window then hides it to tray.
+    //    After 50ms, a user-opened window will still be visible and foreground.
+    if (!IsWindowVisible(hMainWnd) || IsIconic(hMainWnd) ||
+        GetForegroundWindow() != hMainWnd) {
+        Wh_Log(L"Window not visible/foreground, aborting cleanup (likely auto-start).");
+        InterlockedExchange(&g_cleanupRunning, 0);
+        return 0;
+    }
+
+    // 3. Send the cleanup command
     PostMessageA(hMainWnd, WM_COMMAND, IDM_CMD_DELETE_COMPLETED, 0);
 
-    // 3. Find the confirmation dialog by ownership (language-independent)
+    // 4. Find the confirmation dialog by ownership (language-independent)
     for (int i = 0; i < 20; i++) {
         Sleep(50);
 
@@ -66,13 +85,16 @@ DWORD WINAPI CleanupTask(LPVOID lpParam) {
             // Hide the popup immediately to keep the UI clean
             ShowWindow(search.hResult, SW_HIDE);
 
-            // Click the "Yes" button
-            SendMessageW(search.hResult, WM_COMMAND, IDYES, 0);
+            // Click the "Yes" button (PostMessage to avoid cross-thread deadlock)
+            PostMessageW(search.hResult, WM_COMMAND, IDYES, 0);
 
             Wh_Log(L"Window opened -> Cleanup done -> Confirmation dismissed.");
             break;
         }
     }
+
+    // Release the concurrency guard
+    InterlockedExchange(&g_cleanupRunning, 0);
     return 0;
 }
 
@@ -103,7 +125,8 @@ BOOL WINAPI ShowWindow_Hook(HWND hWnd, int nCmdShow) {
 
             if (hOwner == NULL && hMenu != NULL) {
                 // Start the cleanup in a separate thread to avoid freezing the UI
-                CreateThread(NULL, 0, CleanupTask, (LPVOID)hWnd, 0, NULL);
+                HANDLE hThread = CreateThread(NULL, 0, CleanupTask, (LPVOID)hWnd, 0, NULL);
+                if (hThread) CloseHandle(hThread);
                 Wh_Log(L"IDM main window detected, starting cleanup.");
             }
         }
