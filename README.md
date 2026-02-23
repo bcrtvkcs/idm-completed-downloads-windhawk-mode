@@ -23,11 +23,10 @@ The mod hooks the `ShowWindow` function in the Windows API. When IDM makes a win
 
 ## Installation
 
-1. Download and install [Windhawk](https://windhawk.net/)
-2. Click the **"New mod"** button in Windhawk
-3. Paste the contents of `idm-completed-downloads-cleaner.wh.cpp` into the code area
-4. Click the **"Compile"** button
-5. Enable the mod
+1. Install [Windhawk](https://windhawk.net/)
+2. Search for "IDM Completed Downloads Cleaner" in the mod browser
+3. Click Install
+4. You're all set
 
 ## Requirements
 
