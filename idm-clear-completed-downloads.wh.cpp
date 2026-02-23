@@ -15,7 +15,7 @@
 /*
 # IDM Clear Completed Downloads
 
-This mod automatically cleans up completed downloads every time you open the Internet Download Manager (IDM) window.
+This mod automatically cleans up completed downloads every time you open the [Internet Download Manager (IDM)](https://www.internetdownloadmanager.com/) window.
 
 ## What Does It Do?
 
@@ -178,5 +178,6 @@ BOOL Wh_ModInit() {
 
     return TRUE;
 }
+
 
 
