@@ -18,8 +18,29 @@
 // SETTINGS
 // ---------------------------------------------------------
 #define IDM_CMD_DELETE_COMPLETED 32794
-#define CONFIRM_BTN_ID 6  // "Yes" button ID found from logs
-#define POPUP_TITLE L"Confirm deleting downloads"
+#define IDYES 6  // Standard Windows IDYES button ID
+
+// ---------------------------------------------------------
+// HELPER: Find a dialog owned by a specific window
+// ---------------------------------------------------------
+struct PopupSearch {
+    HWND hOwner;
+    HWND hResult;
+};
+
+BOOL CALLBACK FindOwnedDialog(HWND hWnd, LPARAM lParam) {
+    PopupSearch* search = (PopupSearch*)lParam;
+
+    if (GetWindow(hWnd, GW_OWNER) == search->hOwner) {
+        char className[64];
+        GetClassNameA(hWnd, className, sizeof(className));
+        if (strcmp(className, "#32770") == 0) {
+            search->hResult = hWnd;
+            return FALSE;
+        }
+    }
+    return TRUE;
+}
 
 // ---------------------------------------------------------
 // HELPER THREAD: Handles Cleanup and Confirmation
@@ -34,17 +55,19 @@ DWORD WINAPI CleanupTask(LPVOID lpParam) {
     // 2. Send the cleanup command
     PostMessageA(hMainWnd, WM_COMMAND, IDM_CMD_DELETE_COMPLETED, 0);
 
-    // 3. Catch the confirmation dialog if it appears (wait up to 1 second)
+    // 3. Find the confirmation dialog by ownership (language-independent)
     for (int i = 0; i < 20; i++) {
         Sleep(50);
-        HWND hPopup = FindWindowW(NULL, POPUP_TITLE);
 
-        if (hPopup != NULL) {
+        PopupSearch search = { hMainWnd, NULL };
+        EnumWindows(FindOwnedDialog, (LPARAM)&search);
+
+        if (search.hResult != NULL) {
             // Hide the popup immediately to keep the UI clean
-            ShowWindow(hPopup, SW_HIDE);
+            ShowWindow(search.hResult, SW_HIDE);
 
             // Click the "Yes" button
-            SendMessageW(hPopup, WM_COMMAND, CONFIRM_BTN_ID, 0);
+            SendMessageW(search.hResult, WM_COMMAND, IDYES, 0);
 
             Wh_Log(L"Window opened -> Cleanup done -> Confirmation dismissed.");
             break;

@@ -37,8 +37,7 @@ The mod hooks the `ShowWindow` function in the Windows API. When IDM makes a win
 ## Notes
 
 - The mod only runs inside the `idman.exe` process
-- The confirmation dialog title is set to English (`Confirm deleting downloads`)
-- Users with a different IDM language should change the `POPUP_TITLE` value to match their language
+- The confirmation dialog is detected by its ownership relationship to the main window, so it works with any IDM language
 
 ## License
 
