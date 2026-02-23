@@ -36,7 +36,7 @@ The mod hooks the `ShowWindow` function in the Windows API. When IDM makes a win
 
 ## Target  Process
 
-- This mod is only for Targets the `idman.exe` process and does not affect other programs.
+- This mod is only for targets the `idman.exe` process and does not affect other programs.
 
 ## License
 
