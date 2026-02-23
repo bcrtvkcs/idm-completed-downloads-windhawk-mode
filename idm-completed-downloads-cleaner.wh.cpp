@@ -2,7 +2,7 @@
 // @id              idm-completed-downloads-cleaner
 // @name            IDM Completed Downloads Cleaner
 // @description     This mode cleans up as soon as the IDM window appears on the screen.
-// @version         0.5.1
+// @version         0.5.2
 // @author          BCRTVKCS
 // @github          https://github.com/bcrtvkcs
 // @twitter         https://x.com/bcrtvkcs
@@ -103,3 +103,4 @@ BOOL Wh_ModInit() {
 
     return TRUE;
 }
+
