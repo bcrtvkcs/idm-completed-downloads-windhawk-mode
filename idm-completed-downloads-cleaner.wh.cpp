@@ -66,21 +66,23 @@ BOOL WINAPI ShowWindow_Hook(HWND hWnd, int nCmdShow) {
 
     // Eğer pencere görünür yapılıyorsa (SW_HIDE hariç durumlar)
     if (nCmdShow != SW_HIDE && nCmdShow != SW_MINIMIZE) {
-        
+
         // Bu pencere IDM'in ana penceresi mi?
         char className[256];
         GetClassNameA(hWnd, className, sizeof(className));
 
         if (strcmp(className, "#32770") == 0) {
-            // Ana pencere kontrolü (Başlıkta IDM geçiyor mu?)
-            // IDM'in başlığı indirme durumuna göre değişir ama "Internet Download Manager" genelde vardır.
-            // Daha basit yöntem: Bu pencere görünürse temizliği tetikle.
-            
-            // Diyalog kutularını (Ayarlar vb.) tetiklememek için sadece belirli boyuttan büyükleri ciddiye alabiliriz
-            // veya sadece basitçe komutu göndermeyi deneriz.
-            
-            // Temizlik işlemini ayrı bir thread'de başlat (Arayüzü dondurmamak için)
-            CreateThread(NULL, 0, CleanupTask, (LPVOID)hWnd, 0, NULL);
+            // IDM ana penceresi kontrolü:
+            // 1. Sahipsiz olmalı (owner yok) - diyalog pencereleri ana pencereye aittir
+            // 2. Menü çubuğu olmalı - ana pencerede Görevler/Dosya/İndirmeler menüsü var
+            HWND hOwner = GetWindow(hWnd, GW_OWNER);
+            HMENU hMenu = GetMenu(hWnd);
+
+            if (hOwner == NULL && hMenu != NULL) {
+                // Temizlik işlemini ayrı bir thread'de başlat (Arayüzü dondurmamak için)
+                CreateThread(NULL, 0, CleanupTask, (LPVOID)hWnd, 0, NULL);
+                Wh_Log(L"IDM ana penceresi tespit edildi, temizlik başlatılıyor.");
+            }
         }
     }
 
