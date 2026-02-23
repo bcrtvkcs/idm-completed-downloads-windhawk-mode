@@ -1,6 +1,6 @@
 // ==WindhawkMod==
-// @id              idm-completed-downloads-cleaner
-// @name            IDM Completed Downloads Cleaner
+// @id              idm-clear-completed-downloads
+// @name            IDM Clear Completed Downloads
 // @description     This mode cleans up as soon as the IDM window appears on the screen.
 // @version         0.5.3
 // @author          BCRTVKCS
@@ -149,4 +149,5 @@ BOOL Wh_ModInit() {
 
     return TRUE;
 }
+
 
