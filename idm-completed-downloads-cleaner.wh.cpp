@@ -15,38 +15,38 @@
 #include <wchar.h>
 
 // ---------------------------------------------------------
-// AYARLAR
+// SETTINGS
 // ---------------------------------------------------------
 #define IDM_CMD_DELETE_COMPLETED 32794
-#define CONFIRM_BTN_ID 6  // Loglardan bulduğumuz ID (Evet)
-#define POPUP_TITLE L"İndirmelerin silinmesini onayla"
+#define CONFIRM_BTN_ID 6  // "Yes" button ID found from logs
+#define POPUP_TITLE L"Confirm deleting downloads"
 
 // ---------------------------------------------------------
-// YARDIMCI THREAD: Temizliği ve Onayı Yönetir
+// HELPER THREAD: Handles Cleanup and Confirmation
 // ---------------------------------------------------------
-// Bu fonksiyon, pencere açıldıktan hemen sonra çalışır.
+// This function runs right after the window is shown.
 DWORD WINAPI CleanupTask(LPVOID lpParam) {
     HWND hMainWnd = (HWND)lpParam;
 
-    // 1. Biraz bekle (Pencere tam çizilsin)
+    // 1. Short delay to let the window fully render
     Sleep(50);
 
-    // 2. Temizleme komutunu gönder
+    // 2. Send the cleanup command
     PostMessageA(hMainWnd, WM_COMMAND, IDM_CMD_DELETE_COMPLETED, 0);
 
-    // 3. Onay kutusu çıkarsa yakala (1 saniye boyunca bekle)
+    // 3. Catch the confirmation dialog if it appears (wait up to 1 second)
     for (int i = 0; i < 20; i++) {
         Sleep(50);
         HWND hPopup = FindWindowW(NULL, POPUP_TITLE);
-        
+
         if (hPopup != NULL) {
-            // Pencereyi hemen gizle (Göz zevkini bozmasın)
+            // Hide the popup immediately to keep the UI clean
             ShowWindow(hPopup, SW_HIDE);
-            
-            // "Evet" butonuna bas
+
+            // Click the "Yes" button
             SendMessageW(hPopup, WM_COMMAND, CONFIRM_BTN_ID, 0);
-            
-            Wh_Log(L"Pencere açıldı -> Temizlik yapıldı -> Onay geçildi.");
+
+            Wh_Log(L"Window opened -> Cleanup done -> Confirmation dismissed.");
             break;
         }
     }
@@ -56,32 +56,32 @@ DWORD WINAPI CleanupTask(LPVOID lpParam) {
 // ---------------------------------------------------------
 // HOOK: ShowWindow
 // ---------------------------------------------------------
-// IDM ne zaman bir pencereyi "Görünür" yapmaya çalışsa burası çalışır.
+// This runs whenever IDM tries to make a window visible.
 typedef BOOL (WINAPI *ShowWindow_t)(HWND hWnd, int nCmdShow);
 ShowWindow_t ShowWindow_Original;
 
 BOOL WINAPI ShowWindow_Hook(HWND hWnd, int nCmdShow) {
-    // Önce orijinal işlemi yap (Pencere açılsın)
+    // First, execute the original operation (let the window open)
     BOOL result = ShowWindow_Original(hWnd, nCmdShow);
 
-    // Eğer pencere görünür yapılıyorsa (SW_HIDE hariç durumlar)
+    // If the window is being made visible (excluding SW_HIDE and SW_MINIMIZE)
     if (nCmdShow != SW_HIDE && nCmdShow != SW_MINIMIZE) {
 
-        // Bu pencere IDM'in ana penceresi mi?
+        // Is this window the IDM main window?
         char className[256];
         GetClassNameA(hWnd, className, sizeof(className));
 
         if (strcmp(className, "#32770") == 0) {
-            // IDM ana penceresi kontrolü:
-            // 1. Sahipsiz olmalı (owner yok) - diyalog pencereleri ana pencereye aittir
-            // 2. Menü çubuğu olmalı - ana pencerede Görevler/Dosya/İndirmeler menüsü var
+            // IDM main window check:
+            // 1. Must be ownerless - dialog windows are owned by the main window
+            // 2. Must have a menu bar - the main window has Tasks/File/Downloads menus
             HWND hOwner = GetWindow(hWnd, GW_OWNER);
             HMENU hMenu = GetMenu(hWnd);
 
             if (hOwner == NULL && hMenu != NULL) {
-                // Temizlik işlemini ayrı bir thread'de başlat (Arayüzü dondurmamak için)
+                // Start the cleanup in a separate thread to avoid freezing the UI
                 CreateThread(NULL, 0, CleanupTask, (LPVOID)hWnd, 0, NULL);
-                Wh_Log(L"IDM ana penceresi tespit edildi, temizlik başlatılıyor.");
+                Wh_Log(L"IDM main window detected, starting cleanup.");
             }
         }
     }
@@ -90,10 +90,10 @@ BOOL WINAPI ShowWindow_Hook(HWND hWnd, int nCmdShow) {
 }
 
 // ---------------------------------------------------------
-// BAŞLATMA
+// INITIALIZATION
 // ---------------------------------------------------------
 BOOL Wh_ModInit() {
-    Wh_Log(L"IDM Açılışta Temizleyici Başlatıldı.");
+    Wh_Log(L"IDM Completed Downloads Cleaner initialized.");
 
     Wh_SetFunctionHook(
         (void*)ShowWindow,
