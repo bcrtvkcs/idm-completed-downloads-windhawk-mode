@@ -41,4 +41,4 @@ The mod hooks the `ShowWindow` function in the Windows API. When IDM makes a win
 
 ## License
 
-This project is open source. You are free to use and modify it as you wish.
+All rights reserved. No license specified.
