@@ -1,46 +1,46 @@
 # IDM Completed Downloads Cleaner
 
-Internet Download Manager (IDM) penceresini her actiginizda tamamlanmis indirmeleri otomatik olarak temizleyen bir [Windhawk](https://windhawk.net/) modudur.
+A [Windhawk](https://windhawk.net/) mod that automatically cleans up completed downloads every time you open the Internet Download Manager (IDM) window.
 
-## Ne Yapar?
+## What Does It Do?
 
-IDM'in ana penceresi acildiginda mod devreye girer ve su islemleri otomatik olarak gerceklestirir:
+When IDM's main window opens, the mod kicks in and automatically performs the following:
 
-1. **Tamamlanan indirmeleri siler** - IDM'in "Tamamlanan indirmeleri sil" komutunu tetikler
-2. **Onay kutusunu otomatik gecer** - Cikan onay diyalogunu gizler ve "Evet" butonuna basar
-3. **Yalnizca ana pencereyi takip eder** - Ayarlar, indirme kutusu gibi diger IDM pencerelerini gormezden gelir
+1. **Deletes completed downloads** - Triggers IDM's "Delete completed downloads" command
+2. **Auto-dismisses the confirmation dialog** - Hides the confirmation popup and clicks "Yes"
+3. **Targets only the main window** - Ignores other IDM windows like Settings, download dialogs, etc.
 
-Tum bu islemler arka planda, milisaniyeler icinde gerceklesir.
+All of this happens in the background within milliseconds.
 
-## Nasil Calisir?
+## How It Works
 
-Mod, Windows API'deki `ShowWindow` fonksiyonunu hooklar. IDM bir pencereyi gorunur yaptiginda:
+The mod hooks the `ShowWindow` function in the Windows API. When IDM makes a window visible:
 
-- Pencerenin sinif adinin `#32770` (standart dialog sinifi) olup olmadigini kontrol eder
-- Pencerenin **sahipsiz** (owner yok) ve **menu cubugu olan** bir pencere olup olmadigini dogrular
-- Bu iki kosulu yalnizca IDM ana penceresi karsiladigi icin diger pencereler filtrelenir
-- Kosullar saglanirsa temizlik islemini ayri bir thread'de baslatir
+- Checks if the window's class name is `#32770` (standard dialog class)
+- Verifies the window is **ownerless** (no owner) and **has a menu bar**
+- Only the IDM main window satisfies both conditions, so other windows are filtered out
+- If conditions are met, the cleanup task is launched in a separate thread
 
-## Kurulum
+## Installation
 
-1. [Windhawk](https://windhawk.net/)'i indirip kurun
-2. Windhawk'ta **"New mod"** (Yeni mod) butonuna tiklayin
-3. `idm-completed-downloads-cleaner.wh.cpp` dosyasinin icerigini kod alanina yapiştirin
-4. **"Compile"** (Derle) butonuna tiklayin
-5. Modu etkinlestirin
+1. Download and install [Windhawk](https://windhawk.net/)
+2. Click the **"New mod"** button in Windhawk
+3. Paste the contents of `idm-completed-downloads-cleaner.wh.cpp` into the code area
+4. Click the **"Compile"** button
+5. Enable the mod
 
-## Gereksinimler
+## Requirements
 
 - [Windhawk](https://windhawk.net/)
 - [Internet Download Manager (IDM)](https://www.internetdownloadmanager.com/)
-- Windows isletim sistemi
+- Windows operating system
 
-## Notlar
+## Notes
 
-- Mod yalnizca `idman.exe` isleminde calisir
-- Onay kutusu basligi Turkce olarak ayarlanmistir (`Indirmelerin silinmesini onayla`)
-- Farkli dilde IDM kullananlar `POPUP_TITLE` degerini kendi dillerine gore degistirmelidir
+- The mod only runs inside the `idman.exe` process
+- The confirmation dialog title is set to English (`Confirm deleting downloads`)
+- Users with a different IDM language should change the `POPUP_TITLE` value to match their language
 
-## Lisans
+## License
 
-Bu proje acik kaynaklidir. Istediginiz gibi kullanabilir ve degistirebilirsiniz.
+This project is open source. You are free to use and modify it as you wish.
